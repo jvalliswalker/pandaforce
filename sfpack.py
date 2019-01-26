@@ -1,8 +1,16 @@
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
+    
+install('simple_salesforce')
+install('salesforce_reporting')
+install('pandas')
+
 from simple_salesforce import Salesforce
 from salesforce_reporting import Connection, ReportParser
 import pandas as pd
-import numpy as np
-import os
 import webbrowser
 
 class color:

@@ -27,10 +27,16 @@ class color:
 
 # -----------------------------------------------------------------------------------------------
 
-def init(username,password,orgid,securitytoken=''):
+def init(username,password,orgid,securitytoken='',sandbox=False):
     global sf, sfr
-    sf = Salesforce(password=password, username=username, organizationId=orgid)
+    if sandbox == False:
+        sf = Salesforce(password=password, username=username, organizationId=orgid)
+    elif sandbox == True:
+        sf = Salesforce(password=password, username=username, organizationId=orgid,domain='test')
+    else:
+        raise Exception('Invalid entry for argument \'sandbox\'. The \'sandbox\' argument can be {} (to access a Salesforce sandbox) or {} (the default value)'.format(colorIt('True','GREEN'),colorIt('False','GREEN')))
     sfr = Connection(username=username,password=password,security_token=securitytoken)
+    return 'Initiation Successful'
     
 def colorIt(text,colorType):
     col = ''

@@ -2,6 +2,7 @@ import subprocess
 import sys
 
 def install(package):
+    """Runs pip installation on passed package name"""
     subprocess.call([sys.executable, "-m", "pip", "install", package])
     
 install('simple_salesforce')
@@ -10,94 +11,93 @@ install('pandas')
 
 from simple_salesforce import Salesforce
 from salesforce_reporting import Connection, ReportParser
+from re import sub
 import pandas as pd
-import webbrowser
 
-class color:
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
-    DARKCYAN = '\033[36m'
+# Utility functions within sfpack
+def addColor(text):
+    """Provides blue-color formatting for passed string"""
     BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
+    return ('{}{}{}{}{}'.format(BLUE,BOLD,text,END,END))
 
+def expectString(val):
+    """Raises standard Exception message if passed value is not a string"""
+    if type(val) != str:
+        raise Exception('Expected string, received {}'.format(type(val)))
+
+def functions():
+    """Displays list of primary sfpack functions"""
+    print('sfpack contains the following functions:\n\t-' +
+    addColor('checkSalesforceObject') + '\n\t-' +
+    addColor('convertTo18') + '\n\t-' +
+    addColor('getdf') + '\n\t-' +
+    addColor('getreport') + '\n\t-' +
+    addColor('getObjectFields') + '\n\t-' +
+    addColor('getObjectFieldsDict') + '\n\t-' +
+    addColor('isNull') + '\n\t-' +
+    addColor('login') + '\n\t-' +
+    addColor('repairCasing') + '\ntype \'help(function_name)\' for additional information on each function')
+          
+          
 # -----------------------------------------------------------------------------------------------
+# Primary sfpack functions
 
-def init(username,password,orgid,securitytoken='',sandbox=False):
+def login(username,password,orgid,securitytoken='',sandbox=False):
+    """Initiates Salseforce connection objects sf (simple-salesforce) and sfr (salesforce-reporting)"""
     global sf, sfr
     if sandbox == False:
-        sf = Salesforce(password=password, username=username, organizationId=orgid)
+        sf = Salesforce(password=password, username=username, security_token=securitytoken,organizationId=orgid)
     elif sandbox == True:
-        sf = Salesforce(password=password, username=username, organizationId=orgid,domain='test')
+        sf = Salesforce(password=password, username=username, organizationId=orgid,security_token=securitytoken,domain='test')
     else:
         raise Exception('Invalid entry for argument \'sandbox\'. The \'sandbox\' argument can be {} (to access a Salesforce sandbox) or {} (the default value)'.format(colorIt('True','GREEN'),colorIt('False','GREEN')))
     sfr = Connection(username=username,password=password,security_token=securitytoken)
-    return 'Initiation Successful'
-    
-def colorIt(text,colorType):
-    col = ''
-    if colorType.lower() == 'purple':
-        return '{}{}{}{}{}'.format(color.PURPLE,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'cyan':
-        return '{}{}{}{}{}'.format(color.CYAN,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'darkcyan':
-        return '{}{}{}{}{}'.format(color.DARKCYAN,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'blue':
-        return '{}{}{}{}{}'.format(color.BLUE,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'green':
-        return '{}{}{}{}{}'.format(color.GREEN,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'yellow':
-        return '{}{}{}{}{}'.format(color.YELLOW,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'red':
-        return '{}{}{}{}{}'.format(color.red,color.BOLD,text,color.END,color.END)
-    elif colorType.lower() == 'underline':
-        return '{}{}{}{}{}'.format(color.UNDERLINE,color.BOLD,text,color.END,color.END)
-    else:
-        raise Exception('Please enter a valid color (purple, cyan, darkcyan, blue, green, yellow, red, or underline)')
+    return 'Login Successful'
 
-        
 def getdf(val):
+    """Accepts string SOQL query, returns Pandas dataframe of the queried data"""
+    expectString(val)
     try:
         return pd.DataFrame(list(sf.query_all(val)['records'])).drop(columns=['attributes'])
     except (KeyError, NameError) as e:
         if str(e) == '"labels [\'attributes\'] not contained in axis"':
-            print('No data found for query\n----------------------\n[{}]\n----------------------\nNull value returned'.format(val))
-            return None
+            raise Exception('No data found for query [{}]'.format(val))
         elif str(e) == 'name \'sf\' is not defined':
             raise Exception('The sfpack variable \'sf\' has not been defined. ' +
-                            'Please initiate sfpack using {} with your Salesforce login credentials. '.format(colorIt('sfpack.init()','BLUE')) +
-                            'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'init\')','BLUE'),colorIt('init()','BLUE')))
+                            'Please initiate sfpack using {} with your Salesforce login credentials. '.format(colorIt('sfpack.login()','BLUE')) +
+                            'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'login\')','BLUE'),colorIt('login()','BLUE')))
         else:
             return e
-    
+
 def getReport(report_id):
+    """Accepts string Salesforce Report ID, returns Pandas dataframe of queried data"""
+    expectString(report_id)
     try:
         return pd.DataFrame(ReportParser(sfr.get_report(report_id)).records_dict())
     except (KeyError, NameError) as e:
         if str(e) == 'name \'sfr\' is not defined':
             raise Exception('The sfpack variable \'sfr\' has not been defined. ' +
-                            'Please initiate sfpack using {} with your Salesforce login credentials. '.format(colorIt('sfpack.init()','BLUE')) +
-                            'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'init\')','BLUE'),colorIt('init()','BLUE')))
+                            'Please initiate sfpack using {} with your Salesforce login credentials. '.format(colorIt('sfpack.login()','BLUE')) +
+                            'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'login\')','BLUE'),colorIt('login()','BLUE')))
         else:
             return e
 
 def updatesf(obj='',uptype='',data=''):
-    if uptype not in ['insert','update','delete','hard_delete','upsert']:
+    if uptype.lower() not in ['insert','update','delete','hard_delete','upsert']:
         raise Exception('No valid uptype selected. Please choose one of the folowing options: [insert, update, delete, hard_delte, upsert]')
     else:
         return(eval(f'sf.bulk.{obj}.{uptype}(data)'))        
 
-
 def convertTo18(fifteenId):
-    #check valid input
-    if fifteenId is None:
-        return fifteenId
-    if len(fifteenId) < 15:
-        return "not a valid 15 digit ID: " + fifteenId
+    """Converts passed Salesforce 15-digit ID to an 18-digit Id"""
+    expectString(fifteenId)
+    if len(fifteenId) != 15:
+        raise Exception('Expected 15 character string, received {} character string'.format(len(fifteenId)))
+    elif len(sub('[a-zA-z0-9]','',fifteenId)) > 0:
+        raise Exception('Passed string cannot contain any special characters (i.e. "!","@","#")')
     suffix = ''
     for i in range(0, 3):
         flags = 0
@@ -113,8 +113,21 @@ def convertTo18(fifteenId):
     return fifteenId + suffix
 
 def repairCasing(x18DigitId):
-    if len(x18DigitId) < 18:
-        return 'Error'
+    """Changes 18-digit IDs that have had all character's capitalized to a Salesforce viable 18-digit Id"""
+    def getBitPatterns(c):
+        CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ012345'
+        index = CHARS.find(c)
+        result = []
+        for bitNumber in range(0,5):
+            result.append((index & (1 << bitNumber)) != 0)
+        return result
+    
+    expectString(x18DigitId)
+    if len(x18DigitId) != 18:
+        raise Exception('Expected 18 character string, received {} character string'.format(len(x18DigitId)))
+    elif len(sub('[a-zA-z0-9]','',x18DigitId)) > 0:
+        raise Exception('Passed string cannot contain any special characters (i.e. "!","@","#")')
+        
     toUpper = []
     toUpper.append(getBitPatterns(x18DigitId[15:16]))
     toUpper.append(getBitPatterns(x18DigitId[16:17]))
@@ -123,53 +136,43 @@ def repairCasing(x18DigitId):
     
     output = ''.join([x18DigitId[x].upper() if toUpper[x] else x18DigitId[x].lower() for x in range(0,15)]) + x18DigitId[15:].upper()
         
-    return outputs
+    return output
 
-# Deprecated help function
-def packhelp(*key):
-    coloring = 'blue'
-    if len(key) > 1:
-        raise Exception('packhelp can accept 0 or 1 arguments. You entered {} arguments'.format(len(key)))
-    if len(key) == 0:
-        defList = sorted([
-            colorIt('  -init',coloring),
-            colorIt('  -getdf',coloring),
-            colorIt('  -getReport',coloring),
-            colorIt('  -convertTo18',coloring),
-            colorIt('  -repairCasing',coloring),
-            colorIt('  -massTask',coloring)])
-        print('Fuctions available in sfpack:\n\n' + '\n'.join(defList) + '\n\nRun help(' + colorIt('function name','blue') +') for additional help on each function')
-    elif key[0] == 'getdf':
-        print('The ' + colorIt('getdf',coloring) + ' function returns a Pandas Dataframe based of of the SOQL query passed as an argument.\n\n'
-              'Make sure your SOQL query is written in single quotes (' + colorIt("''",'yellow') + ').\n\n'
-              'You can learn more about SOQL functions at: \nhttps://developer.salesforce.com/docs/atlas.en-us.soql_sosl.meta/soql_sosl/sforce_api_calls_soql.htm')
-    elif key[0] == 'getReport':
-        print('The {} function returns a Pandas DataFrame of the Salesforce Report whose Id you pass in as an argument.\n'.format(colorIt('getReport',coloring)) +
-                'For example, getReport(\'00O1Y00000XXXXX\').')
-    elif key[0] == 'updatesf':
-        print('The {} function allows for bulk updates, inserts, and deletion of records in your org. '.format(colorIt('updatesf',coloring)) +
-                'It requires three parameters: {}, {}, and {}'.format(colorIt('obj',coloring),colorIt('uptype',coloring),colorIt('data',coloring)))
-    elif key[0] == 'convertTo18':
-        print('The {} function returns the 18 digit ID version of the 15 digit ID passed as an argument.\n'.format(colorIt('convertTo18',coloring)) +
-                'For example, convertTo18(\'003i000001IIGw7\') returns \'003i000001IIGw7AAH\'')
-    elif key[0] == 'repairCasing':
-        print('The {} function returns a correct 18 digit ID when passed a capitalized version\n'.format(colorIt('repairCasing()',coloring)) +
-                'of an 18 digit Id. For example, repairCasing(\'003i000001IIGW7\') returns \'003i000001IIGw7\'')
-    elif key[0] == 'massTask':
-        print('The ' + colorIt('massTask()',coloring) + ' function returns a Data Frame of tasks ready to upload, based on the arguments passed in.\n'
-              'The arguments are 1) ' + colorIt('baseTaskId',coloring) + ' and 2) ' + colorIt('populationQuery',coloring) + ':\n\n'
-              '  -' + colorIt('baseTaskId',coloring) + ' is the Salesforce Id of a base task template existing in Salesforce.\n\n'
-              '  -' + colorIt('populationQuery',coloring) + ' is the SOQL query used to select the Wave-Maker population who should receive this task.\n\n')
-    elif key[0] == 'init':
-        print('The {} function initiates your connection with your Salesforce database.\n'.format(colorIt('init()',coloring)) + 
-              'The parameters are 1) {}, 2) {}, 3) {}, and the optional 4) {}.\n\n'.format(colorIt('Username',coloring),
-                                                                                      colorIt('Password',coloring),
-                                                                                      colorIt('OrgId',coloring),
-                                                                                      colorIt('SecurityToken',coloring)) +
-              '{} and {} are your Salesforce username and password respectively. '.format(colorIt('Username',coloring),
-                                                                                      colorIt('Password',coloring)) +
-              '{} is your Salesforce.com Organization ID. '.format(colorIt('OrgId',coloring)) + 
-              '{} is only required if your Salesforce org uses a Security Token, and defaults to \'\' if not assigned.\n\n'.format(colorIt('SecurityToken',coloring)) +
-              '\tEx: init(\n\t\tusername=\'myusername@myemail.com\',\n\t\tpassword=\'mySalesforceLoginPassword\',\n\t\tOrgId=\'myOrgId\',\n\t\tSecrityToken=\'mySecurityToken\')\n') 
+def isNull(val):
+    """Returns boolean value for passed value indicating if it is or is not a Null value. Works for both None and NaN data."""
+    if val == None:
+        return True
+    elif val != val:
+        return True
     else:
-        raise Exception('No such key. Type help() for general help or help(function name) for information on that function')
+        return False
+
+def getObjectFields(obj):
+    """Returns list of all field names in the passed Salesforce object name"""
+    expectString(obj)
+    isObject = checkSalesforceObject(obj)['IsObject']
+    if isObject == False:
+        raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to include \'__c\' to the end of the object name')
+    fields = getattr(sf,obj).describe()['fields']
+    flist = [i['name'] for i in fields]
+    return flist
+
+def getObjectFieldsDict(obj):
+    """Returns dictionary of all field labels (keys) and corresponding field names (values) of passed Salesforce object name"""
+    expectString(obj)
+    fields = getattr(sf,obj).describe()['fields']
+    fdict = {}
+    for i in fields:
+        fdict[i['label']] = i['name']
+    return fdict
+
+def checkSalesforceObject(objName):
+    """Accepts string argument. Returns dict {'isObject':True/False,'Records':count_of_records_in_object}"""
+    expectString(objName)
+    try:
+        getattr(sf,objName).metadata()
+        a = sf.query_all('SELECT count(Id) FROM {}'.format(objName))['records'][0]['expr0']
+        return {'IsObject':True,'Records':a}
+    except:
+        a = sys.exc_info()
+        return {'IsObject':not("Resource {} Not Found".format(objName) in str(a[1])),'Records':None}

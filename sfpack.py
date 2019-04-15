@@ -45,7 +45,7 @@ def functions():
 # -----------------------------------------------------------------------------------------------
 # Primary sfpack functions
 
-def login(username,password,orgid,securitytoken='',sandbox=False):
+def login(username,password,orgid,securitytoken='',sandbox=False,include_reports=False):
     """Initiates Salseforce connection objects sf (simple-salesforce) and sfr (salesforce-reporting)"""
     global sf, sfr
     if sandbox == False:
@@ -53,8 +53,10 @@ def login(username,password,orgid,securitytoken='',sandbox=False):
     elif sandbox == True:
         sf = Salesforce(password=password, username=username, organizationId=orgid,security_token=securitytoken,domain='test')
     else:
-        raise Exception('Invalid entry for argument \'sandbox\'. The \'sandbox\' argument can be {} (to access a Salesforce sandbox) or {} (the default value)'.format(colorIt('True','GREEN'),colorIt('False','GREEN')))
-    sfr = Connection(username=username,password=password,security_token=securitytoken)
+        raise Exception('Invalid entry for argument \'sandbox\'. Argument must be True, False, or Null')
+    if include_reports:
+        sfr = Connection(username=username,password=password,security_token=securitytoken)
+    
     return 'Login Successful'
 
 def getdf(val):

@@ -68,7 +68,7 @@ def functions():
 class login():
     """Initiates Salseforce connection objects sf (simple-salesforce) and sfr (salesforce-reporting)"""
     
-    def __init__(self,username,password,orgid,securitytoken='',sandbox=False,include_reports=False):
+    def __init__(self,username,password,orgid,securitytoken='',sandbox=False):
         self.Username = username
         self.Password = password
         self.OrgId = orgid
@@ -77,7 +77,6 @@ class login():
             self.Sandbox = 'test'
         else:
             self.Sandbox = 'login'
-        self.IncludeReports = include_reports
         self.Org = Salesforce(username=self.Username, password=self.Password,
                               security_token=self.SecurityToken,organizationId=self.OrgId,
                              domain=self.Sandbox)
@@ -99,7 +98,7 @@ class login():
             
     def getReport(self,reportId):
         with requests.session() as s:
-            response = s.get("https://na88.salesforce.com/{}?export".format('00O1Y000006OC6q'), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
+            response = s.get("https://{}/{}?export".format(self.Org.sf_instance,'00O1Y000006OC6q'), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
         
         def splitIt2(responseObject):
             # Separate trailing report data from regular data

@@ -6,7 +6,7 @@ def install(package):
     subprocess.call([sys.executable, "-m", "pip", "install", package])
 
 def __init__():
-    hard_dependencies = ("simple_salesforce", "salesforce_reporting", "pandas")
+    hard_dependencies = ("simple_salesforce", "salesforce_reporting", "pandas","requests")
     missing_dependencies = []
 
     for dependency in hard_dependencies:
@@ -32,10 +32,11 @@ from simple_salesforce import Salesforce
 from salesforce_reporting import Connection, ReportParser
 from re import sub
 import pandas as pd
+import requests
 
 # Utility functions within sfpack
 def addColor(text):
-    """Provides blue-color formatting for passed string"""
+    """Provides blue color and bold formatting for passed string"""
     BLUE = '\033[94m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
@@ -72,38 +73,14 @@ class login():
         self.Password = password
         self.OrgId = orgid
         self.SecurityToken = securitytoken
-        self.Sandbox = sandbox
-        self.IncludeReports = include_reports
-        self.Org = self.connectToSalesforceOrg()
-    
-    def connectToSalesforceOrg(self):
-        if self.Sandbox == False:
-            sf = Salesforce(password=self.Password, username=self.Username, security_token=self.SecurityToken,organizationId=self.OrgId)
-        elif self.Sandbox == True:
-            sf = Salesforce(password=self.Password, username=self.Username, organizationId=self.OrgId,security_token=self.SecurityToken,domain='test')
+        if sandbox==True:
+            self.Sandbox = 'test'
         else:
-            raise Exception('Invalid entry for argument \'sandbox\'. Argument must be True, False, or Null')
-        if self.IncludeReports:
-            sfr = Connection(username=self.Username,password=self.Password,security_token=self.SecurityToken)
-        try:
-            return {'sf':sf,'sfr':sfr}
-        except UnboundLocalError as e:
-            return sf
-            
-
-# def login(username,password,orgid,securitytoken='',sandbox=False,include_reports=False):
-#     """Initiates Salseforce connection objects sf (simple-salesforce) and sfr (salesforce-reporting)"""
-#     global sf, sfr
-#     if sandbox == False:
-#         sf = Salesforce(password=password, username=username, security_token=securitytoken,organizationId=orgid)
-#     elif sandbox == True:
-#         sf = Salesforce(password=password, username=username, organizationId=orgid,security_token=securitytoken,domain='test')
-#     else:
-#         raise Exception('Invalid entry for argument \'sandbox\'. Argument must be True, False, or Null')
-#     if include_reports:
-#         sfr = Connection(username=username,password=password,security_token=securitytoken)
-#     
-#     return 'Login Successful'
+            self.Sandbox = 'login'
+        self.IncludeReports = include_reports
+        self.Org = Salesforce(username=self.Username, password=self.Password,
+                              security_token=self.SecurityToken,organizationId=self.OrgId,
+                             domain=self.Sandbox)
 
     def getdf(self,val):
         """Accepts string SOQL query, returns Pandas dataframe of the queried data"""
@@ -119,19 +96,51 @@ class login():
                                 'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'login\')','BLUE'),colorIt('login()','BLUE')))
             else:
                 return e
+            
+    def getReport(self,reportId):
+        with requests.session() as s:
+            response = s.get("https://na88.salesforce.com/{}?export".format('00O1Y000006OC6q'), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
+        
+        def splitIt2(responseObject):
+            # Separate trailing report data from regular data
+            # then split remaining data by '\n'
+            bigList = responseObject.text.split('\n\n\n')[0].split('\n')
 
-    def getReport(self,report_id):
-        """Accepts string Salesforce Report ID, returns Pandas dataframe of queried data"""
-        expectString(report_id)
-        try:
-            return pd.DataFrame(ReportParser(sfr.get_report(report_id)).records_dict())
-        except (KeyError, NameError) as e:
-            if str(e) == 'name \'sfr\' is not defined':
-                raise Exception('The sfpack variable \'sfr\' has not been defined. ' +
-                                'Please initiate sfpack using {} with your Salesforce login credentials. '.format(colorIt('sfpack.login()','BLUE')) +
-                                'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'login\')','BLUE'),colorIt('login()','BLUE')))
-            else:
-                return e
+            # Pull headers from first split group
+            headers = bigList[0].split(',')
+
+            #Crop off extra ""
+            for i in range(0,len(headers)):
+                headers[i] = headers[i][1:-1]
+
+            # Initialize dictionary
+            bigDict = {}
+            for i in headers:
+                bigDict[i] = []
+
+            indexKeyMatcher = {}
+            for i in range(0,len(headers)):
+                indexKeyMatcher[i] = headers[i]
+
+            # Separate header data from bigList
+            bigList = bigList[1:]
+
+            # Comma separate each sub-list
+            # and add to dictionary
+            for i in range(0,len(bigList)):
+                data = bigList[i].split('",')
+                #Crop off extra ""
+                for subIndex in range(0,len(data)):
+                    if subIndex == len(data)-1:
+                        data[subIndex] = data[subIndex][1:-1]
+                    else:
+                        data[subIndex] = data[subIndex][1:]
+                for col in range(0,len(data)):
+                    bigDict[indexKeyMatcher[col]].append(data[col])
+        #         bigDict[i] = data
+            return bigDict
+        
+        return pd.DataFrame(splitIt2(response))
 
     def updatesf(self,obj='',uptype='',data=''):
         if uptype.lower() not in ['insert','update','delete','hard_delete','upsert']:

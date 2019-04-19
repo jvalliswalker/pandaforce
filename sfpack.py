@@ -48,6 +48,10 @@ def __expectString(val):
     if type(val) != str:
         raise Exception('Expected string, received {}'.format(type(val)))
 
+def functions():
+    help(isNull)
+    help(convertTo18)
+        
 def info():
     """Displays list of primary sfpack functions"""
     print('sfpack contains the following functions:\n' +
@@ -62,7 +66,7 @@ def info():
         '  - {}:{}\n'.format(__addColor('getObjectFieldsDict'),login.getObjectFieldsDict.__doc__) + 
         '  - {}:\t\t{}'.format(__addColor('getReport'),login.getReport.__doc__))
     
-    print('\nType \'help(function_name)\' for additional information on each function')
+    print('\nType \'help(function_name)\' or \'help(login.method_name)\' for additional information on each function or method')
 
 def convertTo18(fifteenId):
     """Converts the passed Salesforce 15-digit ID to an 18-digit Id"""

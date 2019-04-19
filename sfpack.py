@@ -98,7 +98,7 @@ class login():
             
     def getReport(self,reportId):
         with requests.session() as s:
-            response = s.get("https://{}/{}?export".format(self.Org.sf_instance,'00O1Y000006OC6q'), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
+            response = s.get("https://{}/{}?export".format(sf.Org.sf_instance,'00O1Y000006OC6q'), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
         
         def splitIt2(responseObject):
             # Separate trailing report data from regular data
@@ -141,11 +141,11 @@ class login():
         
         return pd.DataFrame(splitIt2(response))
 
-    def updatesf(self,obj='',uptype='',data=''):
+    def dml(self,obj='',uptype='',data=''):
         if uptype.lower() not in ['insert','update','delete','hard_delete','upsert']:
-            raise Exception('No valid uptype selected. Please choose one of the folowing options: [insert, update, delete, hard_delte, upsert]')
+            raise Exception('No valid uptype selected. Please choose one of the folowing options: [insert, update, delete, hard_delete, upsert]')
         else:
-            return(eval(f'sf.bulk.{obj}.{uptype}(data)'))        
+            return(eval(f'self.Org.bulk.{obj}.{uptype}(data)'))    
 
     def convertTo18(self,fifteenId):
         """Converts passed Salesforce 15-digit ID to an 18-digit Id"""

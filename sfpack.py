@@ -1,7 +1,7 @@
 import subprocess
 import sys
 
-def install(package):
+def __install(package):
     """Runs pip installation on passed package name"""
     subprocess.call([sys.executable, "-m", "pip", "install", package])
 
@@ -20,9 +20,9 @@ def __init__():
         print("Missing required packages {}".format(missing_dependencies))
         response = input('Would you like to install these packages? y/n')
         if response == 'y':
-            install('simple_salesforce')
-            install('salesforce_reporting')
-            install('pandas')
+            __install('simple_salesforce')
+            __install('salesforce_reporting')
+            __install('pandas')
         else:
             raise Exception('sfpack cannot run without required packages {}'.format(missing_dependencies))
 
@@ -35,7 +35,7 @@ import pandas as pd
 import requests
 
 # Utility functions within sfpack
-def addColor(text):
+def __addColor(text):
     """Provides blue color and bold formatting for passed string"""
     BLUE = '\033[94m'
     BOLD = '\033[1m'
@@ -43,7 +43,7 @@ def addColor(text):
     END = '\033[0m'
     return ('{}{}{}{}{}'.format(BLUE,BOLD,text,END,END))
 
-def expectString(val):
+def __expectString(val):
     """Raises standard Exception message if passed value is not a string"""
     if type(val) != str:
         raise Exception('Expected string, received {}'.format(type(val)))
@@ -51,19 +51,19 @@ def expectString(val):
 def functions():
     """Displays list of primary sfpack functions"""
     print('sfpack contains the following functions:\n\t-' +
-    addColor('checkSalesforceObject') + '\n\t-' +
-    addColor('convertTo18') + '\n\t-' +
-    addColor('getdf') + '\n\t-' +
-    addColor('getreport') + '\n\t-' +
-    addColor('getObjectFields') + '\n\t-' +
-    addColor('getObjectFieldsDict') + '\n\t-' +
-    addColor('isNull') + '\n\t-' +
-    addColor('login') + '\n\t-' +
-    addColor('repairCasing') + '\ntype \'help(function_name)\' for additional information on each function')
+   __addColor('checkSalesforceObject') + '\n\t-' +
+   __addColor('convertTo18') + '\n\t-' +
+   __addColor('getdf') + '\n\t-' +
+   __addColor('getreport') + '\n\t-' +
+   __addColor('getObjectFields') + '\n\t-' +
+   __addColor('getObjectFieldsDict') + '\n\t-' +
+   __addColor('isNull') + '\n\t-' +
+   __addColor('login') + '\n\t-' +
+   __addColor('repairCasing') + '\ntype \'help(function_name)\' for additional information on each function')
           
 def convertTo18(fifteenId):
     """Converts passed Salesforce 15-digit ID to an 18-digit Id"""
-    expectString(fifteenId)
+    __expectString(fifteenId)
     if len(fifteenId) != 15:
         raise Exception('Expected 15 character string, received {} character string'.format(len(fifteenId)))
     elif len(sub('[a-zA-z0-9]','',fifteenId)) > 0:
@@ -92,7 +92,7 @@ def repairCasing(x18DigitId):
             result.append((index & (1 << bitNumber)) != 0)
         return result
 
-    expectString(x18DigitId)
+    __expectString(x18DigitId)
     if len(x18DigitId) != 18:
         raise Exception('Expected 18 character string, received {} character string'.format(len(x18DigitId)))
     elif len(sub('[a-zA-z0-9]','',x18DigitId)) > 0:
@@ -121,7 +121,7 @@ def isNull(val):
 # -----------------------------------------------------------------------------------------------
 # Primary sfpack functions
 
-class login():
+class login:
     """Initiates Salseforce connection objects sf (simple-salesforce) and sfr (salesforce-reporting)"""
     
     def __init__(self,username,password,orgid,securitytoken='',sandbox=False):
@@ -137,26 +137,38 @@ class login():
                               security_token=self.SecurityToken,organizationId=self.OrgId,
                              domain=self.Sandbox)
 
-    def getdf(self,val):
+    def __expectString(self,val,argName=None):
+        """Raises standard Exception message if passed value is not a string"""
+        if argName == None:            
+            if type(val) != str:
+                raise Exception('Expected string, received {}'.format(type(val)))
+        elif type(argName) != str:
+            raise Exception('Expected string for argument \'argName\', received {}'.format(type(val)))
+        else:
+            if type(val) != str:
+                raise Exception('Expected string for argument \'{}\', received {}'.format(argName,type(val)))
+        
+    def getdf(self,query):
         """Accepts string SOQL query, returns Pandas dataframe of the queried data"""
-        expectString(val)
+        self.__expectString(query)
         try:
-            return pd.DataFrame(list(self.Org.query_all(val)['records'])).drop(columns=['attributes'])
+            return pd.DataFrame(list(self.Org.query_all(query)['records'])).drop(columns=['attributes'])
         except (KeyError, NameError) as e:
             if str(e) == '"labels [\'attributes\'] not contained in axis"':
-                raise Exception('No data found for query [{}]'.format(val))
-            elif str(e) == 'name \'sf\' is not defined':
-                raise Exception('The sfpack variable \'sf\' has not been defined. ' +
-                                'Please initiate sfpack using {} with your Salesforce login credentials. '.format(colorIt('sfpack.login()','BLUE')) +
-                                'Run {} for more details on {}.'.format(colorIt('sfpack.packhelp(\'login\')','BLUE'),colorIt('login()','BLUE')))
+                raise Exception('No data found for query [{}]'.format(query))
             else:
                 return e
             
     def getReport(self,reportId):
+        self.__expectString(reportId)
+        if len(reportId) != 15 and len(reportId) != 18:
+            raise Exception('Expected 15 character or 18 character string, received {} character string'.format(len(reportId)))
+        elif len(sub('[a-zA-z0-9]','',reportId)) > 0:
+            raise Exception('Passed string cannot contain any special characters (i.e. "!","@","#")')
         with requests.session() as s:
-            response = s.get("https://{}/{}?export".format(sf.Org.sf_instance,'00O1Y000006OC6q'), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
+            response = s.get("https://{}/{}?export".format(self.Org.sf_instance,reportId), headers=self.Org.headers, cookies={'sid': self.Org.session_id})
         
-        def splitIt2(responseObject):
+        def parseReponse(responseObject):
             # Separate trailing report data from regular data
             # then split remaining data by '\n'
             bigList = responseObject.text.split('\n\n\n')[0].split('\n')
@@ -195,9 +207,16 @@ class login():
         #         bigDict[i] = data
             return bigDict
         
-        return pd.DataFrame(splitIt2(response))
+        return pd.DataFrame(parseReponse(response))
 
-    def dml(self,obj='',uptype='',data=''):
+    def dml(self,obj='',uptype='',data=None):
+        self.__expectString(obj,'obj')
+        if self.checkSalesforceObject(obj)['IsObject'] == False:
+            raise Exception('\'{}\' is not a Salesforce object in this org'.format(obj))
+
+        self.__expectString(uptype,'uptype')
+        if type(data) != list:
+            raise Exception('Expected dict for argument \'data\', received {}'.format(type(data)))
         uptype = uptype.lower()
         if uptype not in ['insert','update','delete','hard_delete','upsert']:
             raise Exception('No valid uptype selected. Please choose one of the folowing options: [insert, update, delete, hard_delete, upsert]')
@@ -206,30 +225,30 @@ class login():
 
     def getObjectFields(self,obj):
         """Returns list of all field names in the passed Salesforce object name"""
-        expectString(obj)
-        isObject = checkSalesforceObject(obj)['IsObject']
-        if isObject == False:
-            raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to include \'__c\' to the end of the object name')
-        fields = getattr(sf,obj).describe()['fields']
+        self.__expectString(obj)
+        if self.checkSalesforceObject(obj)['IsObject'] == False:
+            raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to append \'__c\' to the end of the object name')
+        fields = getattr(self.Org,obj).describe()['fields']
         flist = [i['name'] for i in fields]
         return flist
 
     def getObjectFieldsDict(self,obj):
         """Returns dictionary of all field labels (keys) and corresponding field names (values) of passed Salesforce object name"""
-        expectString(obj)
-        fields = getattr(sf,obj).describe()['fields']
+        self.__expectString(obj)
+        if self.checkSalesforceObject(obj)['IsObject'] == False:
+            raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to append \'__c\' to the end of the object name')
+        fields = getattr(self.Org,obj).describe()['fields']
         fdict = {}
         for i in fields:
             fdict[i['label']] = i['name']
         return fdict
 
-    def checkSalesforceObject(self,objName):
+    def checkSalesforceObject(self,obj):
         """Accepts string argument. Returns dict {'isObject':True/False,'Records':count_of_records_in_object}"""
-        expectString(objName)
+        self.__expectString(obj)
         try:
-            getattr(sf,objName).metadata()
-            a = sf.query_all('SELECT count(Id) FROM {}'.format(objName))['records'][0]['expr0']
-            return {'IsObject':True,'Records':a}
+            eval('self.Org.{}.metadata()'.format(obj))['objectDescribe']['label']
+            return {'IsObject':True,'Records':self.getdf('SELECT count(Id) FROM {}'.format(obj)).at[0,'expr0']}
         except:
             a = sys.exc_info()
-            return {'IsObject':not("Resource {} Not Found".format(objName) in str(a[1])),'Records':None}
+            return {'IsObject':False,'Records':None}

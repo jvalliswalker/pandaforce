@@ -47,10 +47,6 @@ def __expectString(val):
     """Raises standard Exception message if passed value is not a string"""
     if type(val) != str:
         raise Exception('Expected string, received {}'.format(type(val)))
-
-def functions():
-    help(isNull)
-    help(convertTo18)
         
 def info():
     """Displays list of primary sfpack functions"""

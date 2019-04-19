@@ -142,7 +142,8 @@ class login():
         return pd.DataFrame(splitIt2(response))
 
     def dml(self,obj='',uptype='',data=''):
-        if uptype.lower() not in ['insert','update','delete','hard_delete','upsert']:
+        uptype = uptype.lower()
+        if uptype not in ['insert','update','delete','hard_delete','upsert']:
             raise Exception('No valid uptype selected. Please choose one of the folowing options: [insert, update, delete, hard_delete, upsert]')
         else:
             return(eval(f'self.Org.bulk.{obj}.{uptype}(data)'))    

@@ -28,17 +28,34 @@ There are also two optional parameters, `securitytoken` and `sandbox`.
   
 You can have any number of `login` instances running within a given script. Each instance should be assigned to a different variable. The default example login instance in this document will be `sf`.
 
-#### Login Class Methods (Details)
+### Login Class Methods (Details)
 
-##### checkObject()
+#### checkObject()
 The `checkObject` method accepts one string parameter, and searches your Salesforce org for an object with a name matching that parameter. It is not case sensitive. The search is by object name, not object label, so make sure to inlude underscores (`_`) and to append `__c` for custom objects.
 
 The method returns a dictionary formatted as `{'isObject':True/False,'Records':None or count of records in object}`.
 
-##### dml()
+#### dml()
 The `dml` method evokes a bulk CRUD (Created, Update, Delete) command into your Salesforce org. These changes are permanent, so be cautious when using this method.
 
 `dml` parameters are as follows:
   - `obj`: the name of the Salesforce object (not its label) as a string
-  - `uptype`: the type of CRUD function to be executed. Options are `insert`, `update`, `delete`, `hard_delete`, and `upsert` as a string
-  - `data`
+  - `uptype`: the type of CRUD function to be executed. Options are `insert`, `update`, `delete`, and `hard_delete` as a string
+  - `data`: this parameter must be a `list` of `dictionaries`. Each value in the list represents a record, and the dictionaries must be formatted as noted below:
+    - `insert`: `{'field_names':field_values_as_type_in_salesforce}'
+    - `update`: `{'Id':'15_or_18_digit_Id_as_String','field_names':field_values_as_type_in_salesforce}`
+    - `delete` and `hard_delete`: `{'Id':'15_or_18_digit_Id_as_String'}
+    
+**Insert Example**
+```
+myData = {'Id':'000000000000000',
+```
+
+**Update Example**
+
+```
+myData = {'Id':'000000000000000',
+```
+
+**Delete Example**
+

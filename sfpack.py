@@ -48,21 +48,24 @@ def __expectString(val):
     if type(val) != str:
         raise Exception('Expected string, received {}'.format(type(val)))
 
-def functions():
+def info():
     """Displays list of primary sfpack functions"""
-    print('sfpack contains the following functions:\n\t-' +
-   __addColor('checkSalesforceObject') + '\n\t-' +
-   __addColor('convertTo18') + '\n\t-' +
-   __addColor('getdf') + '\n\t-' +
-   __addColor('getreport') + '\n\t-' +
-   __addColor('getObjectFields') + '\n\t-' +
-   __addColor('getObjectFieldsDict') + '\n\t-' +
-   __addColor('isNull') + '\n\t-' +
-   __addColor('login') + '\n\t-' +
-   __addColor('repairCasing') + '\ntype \'help(function_name)\' for additional information on each function')
-          
+    print('sfpack contains the following functions:\n' +
+        '  - {}:\t{}\n'.format(__addColor('convertTo18'),convertTo18.__doc__) + 
+        '  - {}:\t\t{}\n'.format(__addColor('isNull'),isNull.__doc__) +
+        '  - {}:\t{}'.format(__addColor('repairCasing'),repairCasing.__doc__))
+    print('\nIt also contains a '+ __addColor('login') +
+        ' class which initiates a connection to a Salesforce org. It contains the following methods:\n' +
+        '  - {}:\t{}\n'.format(__addColor('checkObject'),login.checkObject.__doc__) + 
+        '  - {}:\t\t{}\n'.format(__addColor('getdf'),login.getdf.__doc__) + 
+        '  - {}:\t{}\n'.format(__addColor('getObjectFields'),login.getObjectFields.__doc__) +
+        '  - {}:{}\n'.format(__addColor('getObjectFieldsDict'),login.getObjectFieldsDict.__doc__) + 
+        '  - {}:\t\t{}'.format(__addColor('getReport'),login.getReport.__doc__))
+    
+    print('\nType \'help(function_name)\' for additional information on each function')
+
 def convertTo18(fifteenId):
-    """Converts passed Salesforce 15-digit ID to an 18-digit Id"""
+    """Converts the passed Salesforce 15-digit ID to an 18-digit Id"""
     __expectString(fifteenId)
     if len(fifteenId) != 15:
         raise Exception('Expected 15 character string, received {} character string'.format(len(fifteenId)))
@@ -109,7 +112,7 @@ def repairCasing(x18DigitId):
     return output
 
 def isNull(val):
-    """Returns boolean value for passed value indicating if it is or is not a Null value. Works for both None and NaN data."""
+    """Returns boolean value for passed value indicating if it is a Null or NaN value"""
     if val == None:
         return True
     elif val != val:
@@ -122,7 +125,7 @@ def isNull(val):
 # Primary sfpack functions
 
 class login:
-    """Initiates Salseforce connection objects sf (simple-salesforce) and sfr (salesforce-reporting)"""
+    """Initiates Salseforce connection and is used for subsequent access methods"""
     
     def __init__(self,username,password,orgid,securitytoken='',sandbox=False):
         self.Username = username
@@ -149,7 +152,7 @@ class login:
                 raise Exception('Expected string for argument \'{}\', received {}'.format(argName,type(val)))
         
     def getdf(self,query):
-        """Accepts string SOQL query, returns Pandas dataframe of the queried data"""
+        """Returns pandas dataframe from passed SOQL query"""
         self.__expectString(query)
         try:
             return pd.DataFrame(list(self.Org.query_all(query)['records'])).drop(columns=['attributes'])
@@ -160,6 +163,7 @@ class login:
                 return e
             
     def getReport(self,reportId):
+        """Returns pandas dataframe from passed Salesforce report Id (15 or 18 digit)"""
         self.__expectString(reportId)
         if len(reportId) != 15 and len(reportId) != 18:
             raise Exception('Expected 15 character or 18 character string, received {} character string'.format(len(reportId)))
@@ -210,32 +214,31 @@ class login:
         return pd.DataFrame(parseReponse(response))
 
     def dml(self,obj='',uptype='',data=None):
+        """Runs the specified bulk CRUD command with the passed data"""
         self.__expectString(obj,'obj')
-        if self.checkSalesforceObject(obj)['IsObject'] == False:
+        if self.checkObject(obj)['IsObject'] == False:
             raise Exception('\'{}\' is not a Salesforce object in this org'.format(obj))
-
         self.__expectString(uptype,'uptype')
-        if type(data) != list:
-            raise Exception('Expected dict for argument \'data\', received {}'.format(type(data)))
-        uptype = uptype.lower()
         if uptype not in ['insert','update','delete','hard_delete','upsert']:
             raise Exception('No valid uptype selected. Please choose one of the folowing options: [insert, update, delete, hard_delete, upsert]')
-        else:
-            return(eval(f'self.Org.bulk.{obj}.{uptype}(data)'))    
+        if type(data) != list:
+            raise Exception('Expected list for argument \'data\', received {}'.format(type(data)))
+        uptype = uptype.lower()
+        return(eval(f'self.Org.bulk.{obj}.{uptype}(data)'))    
 
     def getObjectFields(self,obj):
         """Returns list of all field names in the passed Salesforce object name"""
         self.__expectString(obj)
-        if self.checkSalesforceObject(obj)['IsObject'] == False:
+        if self.checkObject(obj)['IsObject'] == False:
             raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to append \'__c\' to the end of the object name')
         fields = getattr(self.Org,obj).describe()['fields']
         flist = [i['name'] for i in fields]
         return flist
 
     def getObjectFieldsDict(self,obj):
-        """Returns dictionary of all field labels (keys) and corresponding field names (values) of passed Salesforce object name"""
+        """Returns all fields of passed Salesforce object name as {label:name} dictionary"""
         self.__expectString(obj)
-        if self.checkSalesforceObject(obj)['IsObject'] == False:
+        if self.checkObject(obj)['IsObject'] == False:
             raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to append \'__c\' to the end of the object name')
         fields = getattr(self.Org,obj).describe()['fields']
         fdict = {}
@@ -243,7 +246,7 @@ class login:
             fdict[i['label']] = i['name']
         return fdict
 
-    def checkSalesforceObject(self,obj):
+    def checkObject(self,obj):
         """Accepts string argument. Returns dict {'isObject':True/False,'Records':count_of_records_in_object}"""
         self.__expectString(obj)
         try:

@@ -45,17 +45,49 @@ The `dml` method evokes a bulk CRUD (Created, Update, Delete) command into your 
     - `insert`: `{'field_names':field_values_as_type_in_salesforce}'
     - `update`: `{'Id':'15_or_18_digit_Id_as_String','field_names':field_values_as_type_in_salesforce}`
     - `delete` and `hard_delete`: `{'Id':'15_or_18_digit_Id_as_String'}
-    
+
 **Insert Example**
 ```
-myData = {'Id':'000000000000000',
+sf = login(login_criteria_here)
+
+myData = [{'Name':'First Record','Field_A__c':'A value','Number_Field__c':123},
+           'Name':'Second Record','Field_A__c':'Another value','Number_Field__c':456}]
+           
+sf.dml('Custom_Object__c','insert',myData)
 ```
 
 **Update Example**
 
 ```
-myData = {'Id':'000000000000000',
+sf = login(login_criteria_here)
+
+myData = [{'Id':'000000000000001','Name':'First Record','Field_A__c':'A value','Number_Field__c':123},
+           'Id':'000000000000002','Name':'Second Record','Field_A__c':'Another value','Number_Field__c':456}]
+           
+sf.dml('Custom_Object__c','update',myData)
 ```
 
 **Delete Example**
+```
+sf = login(login_criteria_here)
+
+myData = [{'Id':'000000000000001'},
+           'Id':'000000000000002'}]
+           
+sf.dml('Custom_Object__c','delete',myData)
+```
+
+`dml` returns a list of dictionaries, as formatted in the example below:
+```
+[{'success': True, 'created': False, 'id': '0030v000000000000B', 'errors': []},
+ {'success': True, 'created': False, 'id': '0030v000000000000N', 'errors': []},
+ {'success': False,'created': False,'id': None,'errors': [{'message': 'Please update phone number format to: (XXX) XXX-XXXX',
+    'fields': ['MobilePhone'],
+    'statusCode': 'FIELD_CUSTOM_VALIDATION_EXCEPTION',
+    'extendedErrorDetails': None}]},
+```
+To capture the `dml` results, assign a variable to the dml command. For example:
+
+```r = sf.dml('Custom_Object__c','delete','myData')```
+
 

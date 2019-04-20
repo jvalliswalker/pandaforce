@@ -59,7 +59,7 @@ To capture the `dml` results, assign a variable to the dml command. For example:
 
 ```r = sf.dml('Custom_Object__c','delete','myData')```
 
-**Insert Example**
+_Insert Example_
 ```
 sf = login(login_criteria_here)
 
@@ -69,7 +69,7 @@ myData = [{'Name':'First Record','Field_A__c':'A value','Number_Field__c':123},
 sf.dml('Custom_Object__c','insert',myData)
 ```
 
-**Update Example**
+_Update Example_
 
 ```
 sf = login(login_criteria_here)
@@ -80,7 +80,7 @@ myData = [{'Id':'000000000000001','Name':'First Record','Field_A__c':'A value','
 sf.dml('Custom_Object__c','update',myData)
 ```
 
-**Delete Example**
+_Delete Example_
 ```
 sf = login(login_criteria_here)
 
@@ -90,7 +90,7 @@ myData = [{'Id':'000000000000001'},
 sf.dml('Custom_Object__c','delete',myData)
 ```
 
-**Dot Notation Example**
+_Dot Notation Example_
 Because the `login` class initiates a `Salesforce` class from the **Simple Salesforce** package, you can also run a dml statement through dot notation. A dml statement in this fashion would look like the following:
 
 ```sf.Org.Custom_Object__c.update(myData)```

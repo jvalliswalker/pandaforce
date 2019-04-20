@@ -1,7 +1,7 @@
 # PandaForce
 A utility package utilizing pandas and simple-salesforce
 
-### Overview
+## Overview
 pandaforce contains the following general utility functions:
   - `convertTo18`:	Converts the passed Salesforce 15-digit ID to an 18-digit Id
   - `info` gives an overview of the functions and methods within the pandaforce package
@@ -16,7 +16,7 @@ It also contains a `login` class which initiates a connection to a Salesforce or
   - `getObjectFieldsDict`: Returns all fields of passed Salesforce object name as {label:name} dictionary
   - `getReport`: Returns pandas dataframe from passed Salesforce report Id (15 or 18 digit)
 
-### Connecting to a Salesforce Org
+## Connecting to a Salesforce Org
 To connect to your Salesforce Org, create a `login` class instance with `var = pandaforce.login()`. `login` requires the following parameters:
   - `username` = string of your Salesforce login username
   - `password` = string of your Salesforce login password
@@ -28,14 +28,14 @@ There are also two optional parameters, `securitytoken` and `sandbox`.
   
 You can have any number of `login` instances running within a given script. Each instance should be assigned to a different variable. The default example login instance in this document will be `sf`.
 
-### Login Class Methods (Details)
+## Login Class Methods (Details)
 
-#### checkObject()
+### checkObject
 The `checkObject` method accepts one string parameter, and searches your Salesforce org for an object with a name matching that parameter. It is not case sensitive. The search is by object name, not object label, so make sure to inlude underscores (`_`) and to append `__c` for custom objects.
 
 The method returns a dictionary formatted as `{'isObject':True/False,'Records':None or count of records in object}`.
 
-#### dml()
+### dml
 The `dml` method evokes a bulk CRUD (Created, Update, Delete) command into your Salesforce org. These changes are permanent, so be cautious when using this method.
 
 `dml` parameters are as follows:
@@ -59,7 +59,7 @@ To capture the `dml` results, assign a variable to the dml command. For example:
 
 ```r = sf.dml('Custom_Object__c','delete','myData')```
 
-_Insert Example_
+**Insert Example**
 ```
 sf = login(login_criteria_here)
 
@@ -69,7 +69,7 @@ myData = [{'Name':'First Record','Field_A__c':'A value','Number_Field__c':123},
 sf.dml('Custom_Object__c','insert',myData)
 ```
 
-_Update Example_
+**Update Example**
 
 ```
 sf = login(login_criteria_here)
@@ -80,7 +80,7 @@ myData = [{'Id':'000000000000001','Name':'First Record','Field_A__c':'A value','
 sf.dml('Custom_Object__c','update',myData)
 ```
 
-_Delete Example_
+**Delete Example**
 ```
 sf = login(login_criteria_here)
 
@@ -90,7 +90,21 @@ myData = [{'Id':'000000000000001'},
 sf.dml('Custom_Object__c','delete',myData)
 ```
 
-_Dot Notation Example_
+**Dot Notation Example**
 Because the `login` class initiates a `Salesforce` class from the **Simple Salesforce** package, you can also run a dml statement through dot notation. A dml statement in this fashion would look like the following:
 
 ```sf.Org.Custom_Object__c.update(myData)```
+
+The `.Org` component between `sf.` and `.Custom_Object__c` is required as the Simple Salesforce `Salesforce` class is housed within the `login` class instance.
+
+### getObjectFields
+The `getObjectFields` method returns list of all field names in the passed Salesforce object name. The passed value must be a string, and be the name of the Salesforce object, not the label (i.e., `'Custom_Object__c'` rather than `'Custom Object'`)
+
+### getObjectFieldsDict
+The `getObjectFieldsDict` method returns all fields of passed Salesforce object name as dictionary, using a {label:name} format. Like `getObjectFields`, the passed string must be the name of the Salesforce object, not the label (i.e., `'Custom_Object__c'` rather than `'Custom Object'`)
+
+### getReport
+The `getReport` method returns a pandas dataframe from passed Salesforce report Id (15- or 18-digit). This method only works on tabular Salesforce reports, and will only return the text value of any hyperlinked text (i.e. The 'Name' field on the report will appear in the dataframe as the text of the name, not a link to the record or the record's 15- or 18-digit Id
+
+## Pandaforce Inheritance
+Pandaforce is a combination of pandas and simple-salesforce, so any functionality of those packages will apply to this package as well. Dataframes returned from methods such as `getdf()` or `getReport` return a pandas DataFrame, so all DataFrame methods from the pandas package will function on it. Likewise, the `Org` variable in each `login` instance is a simple-salesforce Salesforce class, and it's methods are accessible as well.

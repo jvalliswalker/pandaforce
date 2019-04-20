@@ -1,5 +1,5 @@
 # PandaForce
-A utility package utilizing pandas and simple-salesforce
+A utility package utilizing [pandas](https://github.com/pandas-dev/pandas) and [simple-salesforce](https://github.com/simple-salesforce/simple-salesforce)
 
 ## Overview
 pandaforce contains the following general utility functions:
@@ -91,7 +91,7 @@ sf.dml('Custom_Object__c','delete',myData)
 ```
 
 **Dot Notation Example**
-Because the `login` class initiates a `Salesforce` class from the **Simple Salesforce** package, you can also run a dml statement through dot notation. A dml statement in this fashion would look like the following:
+Because the `login` class initiates a `Salesforce` class from the [simple-salesforce](https://github.com/simple-salesforce/simple-salesforce) package, you can also run a dml statement through dot notation. A dml statement in this fashion would look like the following:
 
 ```sf.Org.Custom_Object__c.update(myData)```
 
@@ -107,4 +107,7 @@ The `getObjectFieldsDict` method returns all fields of passed Salesforce object 
 The `getReport` method returns a pandas dataframe from passed Salesforce report Id (15- or 18-digit). This method only works on tabular Salesforce reports, and will only return the text value of any hyperlinked text (i.e. The 'Name' field on the report will appear in the dataframe as the text of the name, not a link to the record or the record's 15- or 18-digit Id
 
 ## Pandaforce Inheritance
-Pandaforce is a combination of pandas and simple-salesforce, so any functionality of those packages will apply to this package as well. Dataframes returned from methods such as `getdf()` or `getReport` return a pandas DataFrame, so all DataFrame methods from the pandas package will function on it. Likewise, the `Org` variable in each `login` instance is a simple-salesforce Salesforce class, and it's methods are accessible as well.
+As its name implies, Pandaforce heavily utilizes [pandas](https://github.com/pandas-dev/pandas) and [simple-salesforce](https://github.com/simple-salesforce/simple-salesforce), so any functionality of those packages will apply to this package as well. 
+
+For example, dataframes returned from methods such as `getdf()` or `getReport` are pandas DataFrames, so all DataFrame methods from the pandas package will function on it. Likewise, the `Org` variable in each `login` instance is a simple-salesforce Salesforce class, and its methods are accessible as well.
+

@@ -46,6 +46,19 @@ The `dml` method evokes a bulk CRUD (Created, Update, Delete) command into your 
     - `update`: `{'Id':'15_or_18_digit_Id_as_String','field_names':field_values_as_type_in_salesforce}`
     - `delete` and `hard_delete`: `{'Id':'15_or_18_digit_Id_as_String'}
 
+`dml` returns a list of dictionaries, as formatted in the example below:
+```
+[{'success': True, 'created': False, 'id': '0030v000000000000B', 'errors': []},
+ {'success': True, 'created': False, 'id': '0030v000000000000N', 'errors': []},
+ {'success': False,'created': False,'id': None,'errors': [{'message': 'Please update phone number format to: (XXX) XXX-XXXX',
+    'fields': ['MobilePhone'],
+    'statusCode': 'FIELD_CUSTOM_VALIDATION_EXCEPTION',
+    'extendedErrorDetails': None}]},
+```
+To capture the `dml` results, assign a variable to the dml command. For example:
+
+```r = sf.dml('Custom_Object__c','delete','myData')```
+
 **Insert Example**
 ```
 sf = login(login_criteria_here)
@@ -77,17 +90,7 @@ myData = [{'Id':'000000000000001'},
 sf.dml('Custom_Object__c','delete',myData)
 ```
 
-`dml` returns a list of dictionaries, as formatted in the example below:
-```
-[{'success': True, 'created': False, 'id': '0030v000000000000B', 'errors': []},
- {'success': True, 'created': False, 'id': '0030v000000000000N', 'errors': []},
- {'success': False,'created': False,'id': None,'errors': [{'message': 'Please update phone number format to: (XXX) XXX-XXXX',
-    'fields': ['MobilePhone'],
-    'statusCode': 'FIELD_CUSTOM_VALIDATION_EXCEPTION',
-    'extendedErrorDetails': None}]},
-```
-To capture the `dml` results, assign a variable to the dml command. For example:
+**Dot Notation Example**
+Because the `login` class initiates a `Salesforce` class from the **Simple Salesforce** package, you can also run a dml statement through dot notation. A dml statement in this fashion would look like the following:
 
-```r = sf.dml('Custom_Object__c','delete','myData')```
-
-
+```sf.Org.Custom_Object__c.update(myData)```

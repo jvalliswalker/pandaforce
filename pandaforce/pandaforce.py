@@ -56,12 +56,12 @@ def info():
         '  - {}:\t{}'.format(__addColor('repairCasing'),repairCasing.__doc__))
     print('\nIt also contains a '+ __addColor('login') +
         ' class which initiates a connection to a Salesforce org. It contains the following methods:\n' +
-        '  - {}:\t{}\n'.format(__addColor('checkObject'),login.checkObject.__doc__) + 
         '  - {}:\t\t{}\n'.format(__addColor('getdf'),login.getdf.__doc__) + 
-        '  - {}:\t{}\n'.format(__addColor('getObjectFields'),login.getObjectFields.__doc__) +
-        '  - {}:{}\n'.format(__addColor('getObjectFieldsDict'),login.getObjectFieldsDict.__doc__) + 
-        '  - {}:\t\t{}'.format(__addColor('getReport'),login.getReport.__doc__))
-    
+        '  - {}:\t\t{}\n'.format(__addColor('getFields'),login.getFields.__doc__) +
+        '  - {}:\t\t{}\n'.format(__addColor('getReport'),login.getReport.__doc__) +
+        '  - {}:\t\t{}\n'.format(__addColor('isObject'),login.isObject.__doc__) + 
+        '  - {}:\t{}'.format(__addColor('recordCount'),login.recordCount.__doc__))
+ 
     print('\nType \'help(function_name)\' or \'help(login.method_name)\' for additional information on each function or method')
 
 def convertTo18(fifteenId):
@@ -216,7 +216,7 @@ class login:
     def dml(self,obj='',uptype='',data=None):
         """Runs the specified bulk CRUD command with the passed data"""
         self.__expectString(obj,'obj')
-        if self.checkObject(obj)['IsObject'] == False:
+        if self.isObject(obj) == False:
             raise Exception('\'{}\' is not a Salesforce object in this org'.format(obj))
         self.__expectString(uptype,'uptype')
         if uptype not in ['insert','update','delete','hard_delete','upsert']:
@@ -226,32 +226,40 @@ class login:
         uptype = uptype.lower()
         return(eval(f'self.Org.bulk.{obj}.{uptype}(data)'))    
 
-    def getObjectFields(self,obj):
-        """Returns list of all field names in the passed Salesforce object name"""
+    def getFields(self,obj,returnDict=False):
+        """Returns list or dictionary of all field names in the passed Salesforce object name."""
         self.__expectString(obj)
-        if self.checkObject(obj)['IsObject'] == False:
+        if self.isObject(obj) == False:
             raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to append \'__c\' to the end of the object name')
         fields = getattr(self.Org,obj).describe()['fields']
-        flist = [i['name'] for i in fields]
-        return flist
+        if returnDict:
+            fdict = {}
+            for i in fields:
+                fdict[i['label']] = i['name']
+            return fdict
+        else:
+            flist = [i['name'] for i in fields]
+            return flist
 
-    def getObjectFieldsDict(self,obj):
-        """Returns all fields of passed Salesforce object name as {label:name} dictionary"""
-        self.__expectString(obj)
-        if self.checkObject(obj)['IsObject'] == False:
-            raise Exception('Invalid Salesforce object name. If this is a custom object, make sure to append \'__c\' to the end of the object name')
-        fields = getattr(self.Org,obj).describe()['fields']
-        fdict = {}
-        for i in fields:
-            fdict[i['label']] = i['name']
-        return fdict
-
-    def checkObject(self,obj):
-        """Accepts string argument. Returns dict {'isObject':True/False,'Records':count_of_records_in_object}"""
+    def isObject(self,obj):
+        """Accepts string argument as api name of object. Returns boolean"""
         self.__expectString(obj)
         try:
             eval('self.Org.{}.metadata()'.format(obj))['objectDescribe']['label']
-            return {'IsObject':True,'Records':self.getdf('SELECT count(Id) FROM {}'.format(obj)).at[0,'expr0']}
+            return True
+        except:
+            a = sys.exc_info()
+            return False
+        
+    def recordCount(self,obj):
+        """Accepts string argument. Returns integer count_of_records_in_object"""
+        self.__expectString(obj)
+        try:
+            eval('self.Org.{}.metadata()'.format(obj))['objectDescribe']['label']
+            try:
+                return self.getdf('SELECT count(Id) FROM {}'.format(obj)).at[0,'expr0']
+            except:
+                return sf.Org.query_all('SELECT ID FROM {}'.format(obj))['totalSize']
         except:
             a = sys.exc_info()
             return {'IsObject':False,'Records':None}

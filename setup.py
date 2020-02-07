@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="pandaforce",
-    version="1.0.0",
+    version="1.1.0",
     author="Jamil Vallis-Walker",
     author_email="",
     description="A pandas and simple-salesforce based utility package",
